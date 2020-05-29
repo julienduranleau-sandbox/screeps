@@ -6,8 +6,8 @@
  * @param {number} max_production_cost Maximum available energy to create a creep
  * @param {boolean} use_road Creeps will stay on roads
  */
-function find_harvester_parts(distance, max_production_cost, use_road = false) {
-    const lifetime = 1500
+export function findHarvesterParts(distance, max_production_cost, use_road = false) {
+    const lifetime = CREEP_LIFE_TIME
     const ticks_travelling = distance * 2
 
     let best_energy_ratio = 0
@@ -31,7 +31,7 @@ function find_harvester_parts(distance, max_production_cost, use_road = false) {
 
             const carry_capacity = parts_carry * 50
             const ticks_refilling = carry_capacity / 2 / parts_work
-            const total_gathered = (lifetime / (distance + ticks_refilling)) * carry_capacity
+            const total_gathered = (lifetime / (ticks_travelling + ticks_refilling)) * carry_capacity
             const energy_ratio = total_gathered / production_cost
 
             if (energy_ratio > best_energy_ratio) {
@@ -45,9 +45,15 @@ function find_harvester_parts(distance, max_production_cost, use_road = false) {
         }
     }
 
+    const final_parts = [
+        Array(best_parts.work).fill(WORK),
+        Array(best_parts.carry).fill(CARRY),
+        Array(best_parts.move).fill(MOVE),
+    ].flat()
+
     return {
         ratio: best_energy_ratio,
-        parts: best_parts,
+        parts: final_parts,
         roads: use_road
     }
 }

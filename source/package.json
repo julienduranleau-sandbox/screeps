@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "rollup src/app.js --file ../main.js --format iife --watch",
+    "build": "rollup src/app.js --file ../main.js --format iife"
   },
   "repository": {
     "type": "git",
