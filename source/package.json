@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/app.js",
   "scripts": {
-    "watch": "rollup src/app.js --file ../main.js --format iife --watch",
-    "build": "rollup src/app.js --file ../main.js --format iife"
+    "watch": "rollup src/app.js --file ../main.js --format iife --watch --sourcemap",
+    "build": "rollup src/app.js --file ../main.js --format iife --sourcemap"
   },
   "repository": {
     "type": "git",

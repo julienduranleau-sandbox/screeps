@@ -1,6 +1,7 @@
 import { isFull, isEmpty, isNotFull, isNotEmpty } from '../helpers/containers'
 import { findHarvesterParts } from '../helpers/findHarvesterParts'
 import nameGenerator from '../helpers/nameGenerator'
+import { Roles } from '../constants'
 
 const TASK = {
     REFILL: "refill",
@@ -8,53 +9,45 @@ const TASK = {
 }
 
 export default {
-    run(room_name, n_creeps) {
-        const room = Game.rooms[room_name]
-        const creeps = Object.values(Game.creeps).filter(c => c.memory.role === "multitask")
-        
-        if (creeps.length < n_creeps) {
-            spawn(room, creeps, n_creeps)
+    run(c) {
+        if (isEmpty(c) && c.memory.task !== TASK.REFILL) {
+            c.memory.task = TASK.REFILL
+            c.memory.task_target = c.room.find(FIND_SOURCES_ACTIVE).sort((a,b) => {
+                return 0.5 - Math.random()
+            })[0].id
         }
-        
-        for (const c of creeps) {
-            if (isEmpty(c) && c.memory.task !== TASK.REFILL) {
-                c.memory.task = TASK.REFILL
-                c.memory.task_target = room.find(FIND_SOURCES_ACTIVE).sort((a,b) => {
-                    return 0.5 - Math.random()
-                })[0].id
-            }
 
-            const need_new_target = c.memory.task_target === null || Game.getObjectById(c.memory.task_target) === null
+        const need_new_target = c.memory.task_target === null || Game.getObjectById(c.memory.task_target) === null
 
-            if (isFull(c) || need_new_target) {
-                defineSpendTarget(room, c)
-            }
+        if (isFull(c) || need_new_target) {
+            defineSpendTarget(c.room, c)
+        }
 
-            // TODO && target wtf
-            if (c.memory.task === TASK.SPEND) {
-                doSpendTarget(room, c)
+        if (c.memory.task === TASK.SPEND) {
+            doSpendTarget(c.room, c)
 
-            } else if (c.memory.task === TASK.REFILL) {
-                doRefillTarget(room, c)
-            }
+        } else if (c.memory.task === TASK.REFILL) {
+            doRefillTarget(c.room, c)
         }
     },
 
-}
+    create(room, limited_parts = false) {
+        const parts = (limited_parts)
+            ? findHarvesterParts(27, Math.max(300, room.energyAvailable), false).parts
+            : findHarvesterParts(27, room.energyCapacityAvailable, false).parts
 
-function spawn(room, creeps, n_creeps) {
-    const parts = (creeps.length > n_creeps - 2)
-            ? findHarvesterParts(27, room.energyCapacityAvailable, false).parts
-            : findHarvesterParts(27, Math.max(300, room.energyAvailable), false).parts
-    const name = nameGenerator.generate(null, "   ✦")
-    const options = {
-        memory: {
-            role: "multitask",
-            task: TASK.REFILL,
-            task_target: null,
+        const name = nameGenerator.generate(null, "   ✦")
+        const options = {
+            memory: {
+                role: Roles.Multitasker,
+                task: TASK.REFILL,
+                task_target: null,
+            }
         }
+
+        return { name, parts, options }
     }
-    Object.values(Game.spawns)[0].spawnCreep(parts, name, options)
+
 }
 
 function defineSpendTarget(room, c) {

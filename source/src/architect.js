@@ -9,7 +9,7 @@ const layout = `
   ■ ● ↓ ● ● ● ● ● ● . ↓ ↑ . ■
   ■ ● ↓ ● ● ● ● ● ● . ↓ ↑ S2■
   ■ ● → → → → → → → . ↓ ↑ . ■
-  ■ ● ● ● ● ● ● ● ● . ↓ ↑ B ■
+  ■ ● ● ● ● ● ● ● ● . ↓ ↑ ST■
   ■ ● ● ● ● ● ● ● ● . ↓ ↑ L1■
   ■ ● ↓ ← ← ← ← ← ← . ↓ ↑ . ■
   ■ ● ↓ ● ● ● ● ● ● . ↓ ↑ PS■
@@ -94,7 +94,7 @@ export default {
 
             case 'PS': building = { type: STRUCTURE_POWER_SPAWN, priority: 1 }; break
 
-            case 'B': building = { type: STRUCTURE_POWER_BANK, priority: 1 }; break
+            case 'ST': building = { type: STRUCTURE_STORAGE, priority: 1 }; break
 
             case 'L1': building = { type: STRUCTURE_LINK, priority: 1 }; break
             case 'L2': building = { type: STRUCTURE_LINK, priority: 2 }; break

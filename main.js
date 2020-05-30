@@ -849,60 +849,58 @@
       }
   };
 
+  const Roles = {
+      Miner: "miner",
+      Carrier: "carrier",
+      Multitasker: "multitasker"
+  };
+
   const TASK = {
       REFILL: "refill",
       SPEND: "spend",
   };
 
-  var multitask = {
-      run(room_name, n_creeps) {
-          const room = Game.rooms[room_name];
-          const creeps = Object.values(Game.creeps).filter(c => c.memory.role === "multitask");
-          
-          if (creeps.length < n_creeps) {
-              spawn(room, creeps, n_creeps);
+  var multitasker = {
+      run(c) {
+          if (isEmpty(c) && c.memory.task !== TASK.REFILL) {
+              c.memory.task = TASK.REFILL;
+              c.memory.task_target = c.room.find(FIND_SOURCES_ACTIVE).sort((a,b) => {
+                  return 0.5 - Math.random()
+              })[0].id;
           }
-          
-          for (const c of creeps) {
-              if (isEmpty(c) && c.memory.task !== TASK.REFILL) {
-                  c.memory.task = TASK.REFILL;
-                  c.memory.task_target = room.find(FIND_SOURCES_ACTIVE).sort((a,b) => {
-                      return 0.5 - Math.random()
-                  })[0].id;
-              }
 
-              const need_new_target = c.memory.task_target === null || Game.getObjectById(c.memory.task_target) === null;
+          const need_new_target = c.memory.task_target === null || Game.getObjectById(c.memory.task_target) === null;
 
-              if (isFull(c) || need_new_target) {
-                  defineSpendTarget(room, c);
-              }
+          if (isFull(c) || need_new_target) {
+              defineSpendTarget(c.room, c);
+          }
 
-              // TODO && target wtf
-              if (c.memory.task === TASK.SPEND) {
-                  doSpendTarget(room, c);
+          if (c.memory.task === TASK.SPEND) {
+              doSpendTarget(c.room, c);
 
-              } else if (c.memory.task === TASK.REFILL) {
-                  doRefillTarget(room, c);
-              }
+          } else if (c.memory.task === TASK.REFILL) {
+              doRefillTarget(c.room, c);
           }
       },
 
-  };
+      create(room, limited_parts = false) {
+          const parts = (limited_parts)
+              ? findHarvesterParts(27, Math.max(300, room.energyAvailable), false).parts
+              : findHarvesterParts(27, room.energyCapacityAvailable, false).parts;
 
-  function spawn(room, creeps, n_creeps) {
-      const parts = (creeps.length > n_creeps - 2)
-              ? findHarvesterParts(27, room.energyCapacityAvailable, false).parts
-              : findHarvesterParts(27, Math.max(300, room.energyAvailable), false).parts;
-      const name = nameGenerator.generate(null, "   ✦");
-      const options = {
-          memory: {
-              role: "multitask",
-              task: TASK.REFILL,
-              task_target: null,
-          }
-      };
-      Object.values(Game.spawns)[0].spawnCreep(parts, name, options);
-  }
+          const name = nameGenerator.generate(null, "   ✦");
+          const options = {
+              memory: {
+                  role: Roles.Multitasker,
+                  task: TASK.REFILL,
+                  task_target: null,
+              }
+          };
+
+          return { name, parts, options }
+      }
+
+  };
 
   function defineSpendTarget(room, c) {
       c.memory.task = TASK.SPEND;
@@ -995,7 +993,7 @@
   ■ ● ↓ ● ● ● ● ● ● . ↓ ↑ . ■
   ■ ● ↓ ● ● ● ● ● ● . ↓ ↑ S2■
   ■ ● → → → → → → → . ↓ ↑ . ■
-  ■ ● ● ● ● ● ● ● ● . ↓ ↑ B ■
+  ■ ● ● ● ● ● ● ● ● . ↓ ↑ ST■
   ■ ● ● ● ● ● ● ● ● . ↓ ↑ L1■
   ■ ● ↓ ← ← ← ← ← ← . ↓ ↑ . ■
   ■ ● ↓ ● ● ● ● ● ● . ↓ ↑ PS■
@@ -1080,7 +1078,7 @@
 
               case 'PS': building = { type: STRUCTURE_POWER_SPAWN, priority: 1 }; break
 
-              case 'B': building = { type: STRUCTURE_POWER_BANK, priority: 1 }; break
+              case 'ST': building = { type: STRUCTURE_STORAGE, priority: 1 }; break
 
               case 'L1': building = { type: STRUCTURE_LINK, priority: 1 }; break
               case 'L2': building = { type: STRUCTURE_LINK, priority: 2 }; break
@@ -1107,15 +1105,128 @@
       }
   };
 
+  var miner = {
+      run(c) {
+          const source = Game.getObjectById(c.memory.source_id);
+          
+          if (c.memory.arrived === false) {
+              const containers = source.pos.findInRange(FIND_MY_STRUCTURES, 1).filter(b => b.structureType === STRUCTURE_CONTAINER);
+              
+              if (containers.length) {
+                  if (c.pos.isEqualTo(containers[0].pos)) {
+                      c.memory.arrived = true;
+                  } else {
+                      c.moveTo(containers[0].pos, { reusePath: 0 });
+                  }
+              } else {
+                  if (c.pos.inRangeTo(source.pos, 1)) {
+                      c.memory.arrived = true;
+                  } else {
+                      c.moveTo(source, { reusePath: 0 });
+                  }
+              }
+          }
+
+          if (c.memory.arrived) {
+              c.harvest(source);
+          }
+      },
+
+      create(room, source) {
+          const n_move_parts = 2;
+          const n_work_parts = 1; //Math.min(6, Math.floor((room.energyCapacityAvailable - (n_move_parts * 50)) / 100))
+          const parts = [
+              Array(n_move_parts).fill(MOVE), 
+              Array(n_work_parts).fill(WORK)
+          ].flat();
+
+          return {
+              name: nameGenerator.generate(null, "  ⛏"),
+              parts,
+              options: {
+                  memory: {
+                      room_name: room.name,
+                      role: Roles.Miner,
+                      source_id: source.id,
+                      arrived: false,
+                  }
+              }
+          }
+      }
+  };
+
+  var spawner = {
+      run(room_name) {
+          const room = Game.rooms[room_name];
+
+          const creeps = Object.values(Game.creeps); //.filter(c => c.memory.room_name === room_name)
+          const sources = room.find(FIND_SOURCES);
+          const buildings = room.find(FIND_MY_STRUCTURES);
+          
+          const spawns = buildings.filter(s => s.structureType === STRUCTURE_SPAWN);
+
+          const multitaskers_to_spawn = createMultitasker(room, creeps);
+          const miners_to_spawn = createMiners(room, creeps);
+
+          const spawn_queue = [multitaskers_to_spawn, miners_to_spawn].flat(2);
+
+          for (let i = 0; i < Math.min(spawns.length, spawn_queue.length); i++) {
+              spawns[i].spawnCreep(spawn_queue[0].parts, spawn_queue[0].name, spawn_queue[0].options);
+          }
+
+          for (const c of creeps) {
+              if (c.memory.role === Roles.Miner) {
+                  miner.run(c);
+              } else if (c.memory.role === Roles.Multitasker) {
+                  multitasker.run(c);
+              }
+          }
+      }
+  };
+
+  function createMiners(room, creeps, sources) {
+      const miner_creeps = creeps.filter(c => c.memory.role === Roles.Miner);
+      const miner_queue = [];
+
+      // for (const source of sources) {
+      //     if (miner_creeps.filter(c => c.memory.source_id === source.id).length) {
+      //         continue
+      //     }
+
+      //     miner_queue.push(miner.create(room, source))
+      // }
+
+      return miner_queue
+  }
+
+  function createMultitasker(room, creeps) {
+      const multitasker_creeps = creeps.filter(c => c.memory.role === Roles.Multitasker);
+      const multitasker_queue = [];
+      const limited_parts = creeps.length < 3;
+
+      for (let i = 0; i < 7 - multitasker_creeps.length; i++) {
+          multitasker_queue.push(multitasker.create(room, limited_parts));
+      }
+
+      return multitasker_queue
+  }
+
   // import './roles/standby'
 
   const ROOM = 'W3N7';
 
-  multitask.run(ROOM, 8);
+  for(var i in Memory.creeps) {
+      if(!Game.creeps[i]) {
+          delete Memory.creeps[i];
+      }
+  }
+
   defense.run(ROOM);
+  spawner.run(ROOM);
 
   // architect.clearConstructionSites(ROOM)
   // architect.visualizeConstructionSites(ROOM, { x: 27, y: 9 })
   architect.createConstructionSites(ROOM, { x: 27, y: 9 });
 
 }());
+//# sourceMappingURL=main.js.map

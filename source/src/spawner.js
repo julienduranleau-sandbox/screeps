@@ -1,44 +1,59 @@
 import { Roles } from './constants'
+import miner from './roles/miner'
+import multitasker from './roles/multitasker'
 
 export default {
     run(room_name) {
         const room = Game.rooms[room_name]
 
-        const spawn_queue = []
-
-        const spawns = room.find(FIND_MY_STRUCTURES)
-            .filter(s => s.structureType === STRUCTURE_SPAWN)
-        
-        const creeps = Game.creeps.filter(c => c.memory.room_name === room_name)
-
+        const creeps = Object.values(Game.creeps) //.filter(c => c.memory.room_name === room_name)
         const sources = room.find(FIND_SOURCES)
+        const buildings = room.find(FIND_MY_STRUCTURES)
+        
+        const spawns = buildings.filter(s => s.structureType === STRUCTURE_SPAWN)
 
-        spawn_queue = spawn_queue.concat(this.createMiners(room, creeps, sources))
-    },
-    
-    createMiners(room, creeps, sources) {
-        const minerCreeps = creeps.filter(c => c.memory.role === Roles.Miner)
-        const miners = []
+        const multitaskers_to_spawn = createMultitasker(room, creeps)
+        const miners_to_spawn = createMiners(room, creeps, sources)
 
-        for (const source of sources) {
-            // Source has miner
-            if (miner_creeps.filter(c => c.memory.source_id === source.id).length) {
-                continue
-            }
+        const spawn_queue = [multitaskers_to_spawn, miners_to_spawn].flat(2)
 
-            miners.push({
-                name: 'Miner',
-                parts: [],
-                options: {
-                    memory: {
-                        room_name: room.name,
-                        role: Roles.Miner,
-                        source_id: source.id
-                    }
-                }
-            })
+        for (let i = 0; i < Math.min(spawns.length, spawn_queue.length); i++) {
+            spawns[i].spawnCreep(spawn_queue[0].parts, spawn_queue[0].name, spawn_queue[0].options);
         }
 
-        return miners
+        for (const c of creeps) {
+            if (c.memory.role === Roles.Miner) {
+                miner.run(c)
+            } else if (c.memory.role === Roles.Multitasker) {
+                multitasker.run(c)
+            }
+        }
     }
+}
+
+function createMiners(room, creeps, sources) {
+    const miner_creeps = creeps.filter(c => c.memory.role === Roles.Miner)
+    const miner_queue = []
+
+    // for (const source of sources) {
+    //     if (miner_creeps.filter(c => c.memory.source_id === source.id).length) {
+    //         continue
+    //     }
+
+    //     miner_queue.push(miner.create(room, source))
+    // }
+
+    return miner_queue
+}
+
+function createMultitasker(room, creeps) {
+    const multitasker_creeps = creeps.filter(c => c.memory.role === Roles.Multitasker)
+    const multitasker_queue = []
+    const limited_parts = creeps.length < 3
+
+    for (let i = 0; i < 7 - multitasker_creeps.length; i++) {
+        multitasker_queue.push(multitasker.create(room, limited_parts))
+    }
+
+    return multitasker_queue
 }

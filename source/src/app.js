@@ -1,13 +1,20 @@
 // import './roles/standby'
 import './utils/RoomVisual'
-import multitask from './roles/multitask'
+import multitask from './roles/multitasker'
 import defense from './defense'
 import architect from './architect'
+import spawner from './spawner'
 
 const ROOM = 'W3N7'
 
-multitask.run(ROOM, 8)
+for(var i in Memory.creeps) {
+    if(!Game.creeps[i]) {
+        delete Memory.creeps[i];
+    }
+}
+
 defense.run(ROOM)
+spawner.run(ROOM)
 
 // architect.clearConstructionSites(ROOM)
 // architect.visualizeConstructionSites(ROOM, { x: 27, y: 9 })
