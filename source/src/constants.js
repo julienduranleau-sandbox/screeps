@@ -1,5 +1,5 @@
 export const Roles = {
-    Miner: "miner",
-    Carrier: "carrier",
-    Multitasker: "multitasker"
+    MINER: "miner",
+    CARRIER: "carrier",
+    MULTITASKER: "multitasker"
 }

@@ -42,7 +42,7 @@ export default {
             options: {
                 memory: {
                     room_name: room.name,
-                    role: Roles.Miner,
+                    role: Roles.MINER,
                     source_id: source.id,
                     arrived: false,
                 }

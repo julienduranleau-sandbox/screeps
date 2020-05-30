@@ -39,7 +39,7 @@ export default {
         const name = nameGenerator.generate(null, "   ✦")
         const options = {
             memory: {
-                role: Roles.Multitasker,
+                role: Roles.MULTITASKER,
                 task: TASK.REFILL,
                 task_target: null,
             }

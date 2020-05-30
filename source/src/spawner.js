@@ -22,9 +22,9 @@ export default {
         }
 
         for (const c of creeps) {
-            if (c.memory.role === Roles.Miner) {
+            if (c.memory.role === Roles.MINER) {
                 miner.run(c)
-            } else if (c.memory.role === Roles.Multitasker) {
+            } else if (c.memory.role === Roles.MULTITASKER) {
                 multitasker.run(c)
             }
         }
@@ -32,7 +32,7 @@ export default {
 }
 
 function createMiners(room, creeps, sources) {
-    const miner_creeps = creeps.filter(c => c.memory.role === Roles.Miner)
+    const miner_creeps = creeps.filter(c => c.memory.role === Roles.MINER)
     const miner_queue = []
 
     // for (const source of sources) {
@@ -47,7 +47,7 @@ function createMiners(room, creeps, sources) {
 }
 
 function createMultitasker(room, creeps) {
-    const multitasker_creeps = creeps.filter(c => c.memory.role === Roles.Multitasker)
+    const multitasker_creeps = creeps.filter(c => c.memory.role === Roles.MULTITASKER)
     const multitasker_queue = []
     const limited_parts = creeps.length < 3
 
