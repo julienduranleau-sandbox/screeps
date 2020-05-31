@@ -75,11 +75,11 @@ export default {
 
             case '●': building = { type: STRUCTURE_EXTENSION, priority: x + y * 100 }; break
 
-            // case 'C1': building = { type: STRUCTURE_CONTAINER, priority: 1 }; break
-            // case 'C2': building = { type: STRUCTURE_CONTAINER, priority: 2 }; break
-            // case 'C3': building = { type: STRUCTURE_CONTAINER, priority: 3 }; break
-            // case 'C4': building = { type: STRUCTURE_CONTAINER, priority: 4 }; break
-            // case 'C5': building = { type: STRUCTURE_CONTAINER, priority: 5 }; break
+            case 'C1': building = { type: STRUCTURE_CONTAINER, priority: 1 }; break
+            case 'C2': building = { type: STRUCTURE_CONTAINER, priority: 2 }; break
+            case 'C3': building = { type: STRUCTURE_CONTAINER, priority: 3 }; break
+            case 'C4': building = { type: STRUCTURE_CONTAINER, priority: 4 }; break
+            case 'C5': building = { type: STRUCTURE_CONTAINER, priority: 5 }; break
 
             case 'T1': building = { type: STRUCTURE_TOWER, priority: 1 }; break
             case 'T2': building = { type: STRUCTURE_TOWER, priority: 2 }; break
@@ -103,11 +103,11 @@ export default {
             case 'L5': building = { type: STRUCTURE_LINK, priority: 5 }; break
             case 'L6': building = { type: STRUCTURE_LINK, priority: 6 }; break
 
-            // case '.': building = { type: STRUCTURE_ROAD, priority: 1 }; break
-            // case '↑': building = { type: STRUCTURE_ROAD, priority: 1 }; break
-            // case '→': building = { type: STRUCTURE_ROAD, priority: 1 }; break
-            // case '↓': building = { type: STRUCTURE_ROAD, priority: 1 }; break
-            // case '←': building = { type: STRUCTURE_ROAD, priority: 1 }; break
+            case '.': building = { type: STRUCTURE_ROAD, priority: 1 }; break
+            case '↑': building = { type: STRUCTURE_ROAD, priority: 1 }; break
+            case '→': building = { type: STRUCTURE_ROAD, priority: 1 }; break
+            case '↓': building = { type: STRUCTURE_ROAD, priority: 1 }; break
+            case '←': building = { type: STRUCTURE_ROAD, priority: 1 }; break
 
             default: building = null
         }

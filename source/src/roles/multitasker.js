@@ -59,7 +59,7 @@ function defineSpendTarget(room, c) {
         const spawn = Object.values(Game.spawns)[0]
         
         const sites = room.find(FIND_CONSTRUCTION_SITES).sort((a, b) => {
-            (a.progress / a.progressTotal) - (b.progress / b.progressTotal)
+            return (a.progress / a.progressTotal) - (b.progress / b.progressTotal)
         })
         
         const towers = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER }})

@@ -2,7 +2,8 @@ export const Roles = {
     MINER: "miner",
     CARRIER: "carrier",
     SPENDER: "spender",
-    MULTITASKER: "multitasker"
+    MULTITASKER: "multitasker",
+    FIXER: "fixer"
 }
 
 export const OPTIMAL_MINER_WORK_PARTS = 6

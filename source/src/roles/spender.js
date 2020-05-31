@@ -24,10 +24,10 @@ export default {
             }
             
         } else if (c.memory.task === Task.SPEND) {
-            let target = Game.getObjectById(c.memory.task_target)
+            let target = Game.getObjectById(c.memory.task_target_id)
 
-            if (target === null || isFull(target)) {
-                target = findTarget(c)
+            if (target === null || (target.store !== undefined && isFull(target))) {
+                target = findTarget(c)                
                 c.memory.task_target_id = target.id
             }
 
@@ -64,6 +64,7 @@ export default {
 }
 
 function findTarget(c) {
+    // console.log("find target")
     const room = Game.rooms[c.memory.room_name]
 
     if (room.controller.ticksToDowngrade < DOWNGRADE_THRESHOLD) {
@@ -73,14 +74,14 @@ function findTarget(c) {
     const spawns = room.find(FIND_MY_SPAWNS).filter(spawn => !isFull(spawn))
 
     const construction_sites = room.find(FIND_CONSTRUCTION_SITES).sort((a, b) => {
-        return (a.progress / a.progressTotal) - (b.progress / b.progressTotal)
+        return (b.progress / b.progressTotal) - (a.progress / a.progressTotal)
     })
     
     const towers = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER }})
-    .filter(tower => !isFull(tower))
+        .filter(tower => !isFull(tower))
     
     const extensions = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTENSION }})
-    .filter(extension => isNotFull(extension))
+        .filter(extension => isNotFull(extension))
     
     if (spawns.length) return spawns[0]
     if (towers.length) return towers[0]
@@ -91,21 +92,22 @@ function findTarget(c) {
 
 function doSpendTarget(c, target) {
     
-    c.moveTo(target, { reusePath: 0 })
-                
     // controller
     if (target.structureType === STRUCTURE_CONTROLLER) {
-        c.upgradeController(target)
-
-    // Construction site
+        if (c.upgradeController(target) === ERR_NOT_IN_RANGE) {
+            c.moveTo(target, { reusePath: 0 })
+        }
+        
+        // Construction site
     } else if (target.progress !== undefined) {
-        c.build(target)
-
-    // Refillable structure
-    } else if ([STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER].includes(target.structureType)) {
-        c.transfer(target, RESOURCE_ENERGY)
-        if (isFull(target)) {
-            c.memory.task_target = null
+        if (c.build(target) === ERR_NOT_IN_RANGE) {
+            c.moveTo(target, { reusePath: 0 })
+        }
+        
+        // Refillable structure
+    } else if (target.store !== undefined) {
+        if (c.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            c.moveTo(target, { reusePath: 0 })
         }
     }
 }

@@ -3,6 +3,7 @@ import creep_miner from './roles/miner'
 import creep_carrier from './roles/carrier'
 import creep_multitasker from './roles/multitasker'
 import creep_spender from './roles/spender'
+import creep_fixer from './roles/fixer'
 
 export default {
     run(room_name) {
@@ -20,6 +21,7 @@ export default {
             createSpenders(room, creeps, sources), // storage only
             createMiners(room, creeps, sources), 
             createCarriers(room, creeps, sources),
+            createFixers(room, creeps), // storage only
         ].flat(2)
 
         // =================
@@ -40,14 +42,12 @@ export default {
         // Run loop
 
         for (const c of creeps) {
-            if (c.memory.role === Roles.MINER) {
-                creep_miner.run(c)
-            } else if (c.memory.role === Roles.MULTITASKER) {
-                creep_multitasker.run(c)
-            } else if (c.memory.role === Roles.CARRIER) {
-                creep_carrier.run(c)
-            } else if (c.memory.role === Roles.SPENDER) {
-                creep_spender.run(c)
+            switch (c.memory.role) {
+                case Roles.MINER: creep_miner.run(c); break
+                case Roles.MULTITASKER: creep_multitasker.run(c); break
+                case Roles.CARRIER: creep_carrier.run(c); break
+                case Roles.SPENDER: creep_spender.run(c); break
+                case Roles.FIXER: creep_fixer.run(c); break
             }
         }
     }
@@ -108,6 +108,21 @@ function createSpenders(room, creeps) {
     }
 
     return spender_queue
+}
+
+function createFixers(room, creeps) {
+    const storages = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_STORAGE } })
+    if (storages.length === 0) return []
+
+    const fixer_creeps = creeps.filter(c => c.memory.role === Roles.FIXER)
+    const fixer_queue = []
+    const n_to_spawn = 1
+
+    for (let i = 0; i < n_to_spawn - fixer_creeps.length; i++) {
+        fixer_queue.push(creep_fixer.create(room))
+    }
+
+    return fixer_queue
 }
 
 function displayLeftInQueue(queue) {
