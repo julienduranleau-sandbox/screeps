@@ -14,12 +14,12 @@ for (const c of creeps) {
     if (c.memory.deposit || isFull(c)) {
         const ctrl = c.room.controller
         c.memory.deposit = true
-        c.moveTo(ctrl)
+        c.moveTo(ctrl, { reusePath: 0 })
         c.upgradeController(ctrl)
     } else {
         const s = Game.getObjectById("eff307740862fd8")
         c.memory.deposit = false
-        c.moveTo(s)
+        c.moveTo(s, { reusePath: 0 })
         c.harvest(s)
     }
 }

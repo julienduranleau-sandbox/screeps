@@ -1,7 +1,6 @@
-import { isFull, isEmpty, isNotFull, isNotEmpty } from '../helpers/containers'
-import { findHarvesterParts } from '../helpers/findHarvesterParts'
-import nameGenerator from '../helpers/nameGenerator'
-import { Roles } from '../constants'
+import { isFull, isEmpty, isNotFull, isNotEmpty } from '../helpers/storage_helper'
+import { generateName } from '../helpers/creep_helper'
+import { Roles, DOWNGRADE_THRESHOLD } from '../constants'
 
 const TASK = {
     REFILL: "refill",
@@ -33,10 +32,10 @@ export default {
 
     create(room, limited_parts = false) {
         const parts = (limited_parts)
-            ? findHarvesterParts(27, Math.max(300, room.energyAvailable), false).parts
-            : findHarvesterParts(27, room.energyCapacityAvailable, false).parts
+            ? findParts(27, Math.max(300, room.energyAvailable), false).parts
+            : findParts(27, room.energyCapacityAvailable, false).parts
 
-        const name = nameGenerator.generate(null, "   ✦")
+        const name = generateName(null, "   ✦")
         const options = {
             memory: {
                 role: Roles.MULTITASKER,
@@ -53,7 +52,7 @@ export default {
 function defineSpendTarget(room, c) {
     c.memory.task = TASK.SPEND
 
-    if (room.controller.ticksToDowngrade < 750) {
+    if (room.controller.ticksToDowngrade < DOWNGRADE_THRESHOLD) {
         c.memory.task_target = c.room.controller.id
         
     } else {
@@ -86,7 +85,7 @@ function defineSpendTarget(room, c) {
 function doSpendTarget(room, c) {
     const target = Game.getObjectById(c.memory.task_target)
 
-    c.moveTo(target)
+    c.moveTo(target, { reusePath: 0 })
                 
     // controller
     if (target.structureType === STRUCTURE_CONTROLLER) {
@@ -108,6 +107,58 @@ function doSpendTarget(room, c) {
 function doRefillTarget(room, c) {
     const target = Game.getObjectById(c.memory.task_target)
 
-    c.moveTo(target)
+    c.moveTo(target, { reusePath: 0 })
     c.harvest(target)
+}
+
+function findParts(distance, max_production_cost, use_road = false) {
+    const lifetime = CREEP_LIFE_TIME
+    const ticks_travelling = distance * 2
+
+    let best_energy_ratio = 0
+    let best_parts = null
+
+    for (let parts_work = 1; parts_work < 25; parts_work++) {
+        for (let parts_carry = 1; parts_carry < 25; parts_carry++) {
+            const parts_move = (use_road)
+                ? Math.ceil((parts_work + parts_carry) / 2)
+                : parts_work + parts_carry
+            
+            if (parts_work + parts_carry + parts_move > 50) {
+                break
+            }
+
+            const production_cost = parts_work * 100 + parts_carry * 50 + parts_move * 50
+            
+            if (production_cost > max_production_cost) {
+                break
+            }
+
+            const carry_capacity = parts_carry * 50
+            const ticks_refilling = carry_capacity / 2 / parts_work
+            const total_gathered = (lifetime / (ticks_travelling + ticks_refilling)) * carry_capacity
+            const energy_ratio = total_gathered / production_cost
+
+            if (energy_ratio > best_energy_ratio) {
+                best_energy_ratio = energy_ratio
+                best_parts = {
+                    work: parts_work,
+                    carry: parts_carry,
+                    move: parts_move
+                }
+            }
+        }
+    }
+
+    const final_parts = [
+        Array(best_parts.work).fill(WORK),
+        Array(best_parts.carry).fill(CARRY),
+        Array(best_parts.move).fill(MOVE),
+    ].flat()
+
+    return {
+        ratio: best_energy_ratio,
+        parts: final_parts,
+        roads: use_road
+    }
 }

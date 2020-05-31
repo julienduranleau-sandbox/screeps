@@ -1,5 +1,5 @@
 import { Roles } from '../constants'
-import nameGenerator from '../helpers/nameGenerator'
+import { generateName, generateParts } from '../helpers/creep_helper'
 
 export default {
     run(c) {
@@ -28,16 +28,17 @@ export default {
         }
     },
 
-    create(room, source) {
-        const n_move_parts = 2
-        const n_work_parts = 1 //Math.min(6, Math.floor((room.energyCapacityAvailable - (n_move_parts * 50)) / 100))
-        const parts = [
-            Array(n_move_parts).fill(MOVE), 
-            Array(n_work_parts).fill(WORK)
-        ].flat()
+    create(room, source, use_roads = false) {
+        const target_move_parts = 3
+        const n_work_parts = Math.min(6, Math.floor((room.energyCapacityAvailable - (target_move_parts * 50)) / 100))
+        const n_move_parts = Math.min(target_move_parts, n_work_parts)
+        const parts = generateParts({
+            [MOVE]: n_move_parts,
+            [WORK]: n_work_parts,
+        })
 
         return {
-            name: nameGenerator.generate(null, "  ⛏"),
+            name: generateName(null, "  ⛏"),
             parts,
             options: {
                 memory: {
